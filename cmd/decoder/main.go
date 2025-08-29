@@ -38,7 +38,7 @@ func calldataFromArg(arg string) ([]byte, error) {
 		return nil, fmt.Errorf("empty/missing CALLDATA")
 	}
 	if strings.HasPrefix(arg, "0x") {
-		arg = os.Args[1][2:]
+		arg = arg[2:]
 	}
 	b, err := hex.DecodeString(arg)
 	return b, err
