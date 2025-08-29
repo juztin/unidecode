@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/juztin/unidecode"
 	"github.com/juztin/unidecode/actions"
 	"github.com/juztin/unidecode/commands"
@@ -31,38 +34,6 @@ func checkErr(errFmt string, err error) {
 		}
 		os.Exit(1)
 	}
-}
-
-func calldataFromArg(arg string) ([]byte, error) {
-	if len(arg) == 0 {
-		return nil, fmt.Errorf("empty/missing CALLDATA")
-	}
-	if strings.HasPrefix(arg, "0x") {
-		arg = arg[2:]
-	}
-	b, err := hex.DecodeString(arg)
-	return b, err
-}
-
-func calldataCmd_JSON(pretty bool, args ...string) {
-	b, err := calldataFromArg(args[0])
-	checkErr("", err)
-
-	t := unidecode.MessageType(b)
-	if t != unidecode.ExecuteMessage {
-		checkErr("currently only supports EXECUTE messages; %s", fmt.Errorf("got %x but expected %s", b, unidecode.ExecuteMessage))
-	}
-	execute, err := unidecode.DecodeExecute(b)
-	checkErr("", err)
-
-	if pretty {
-		b, err = json.MarshalIndent(execute, "", "  ")
-	} else {
-		b, err = json.Marshal(execute)
-	}
-	checkErr("", err)
-
-	fmt.Println(string(b))
 }
 
 func printActions(cmd commands.Command) {
@@ -230,18 +201,7 @@ func printActions(cmd commands.Command) {
 	}
 }
 
-func calldataCmd(args ...string) {
-	b, err := calldataFromArg(args[0])
-	checkErr("", err)
-
-	t := unidecode.MessageType(b)
-	if t != unidecode.ExecuteMessage {
-		checkErr("currently only supports EXECUTE messages; %s", fmt.Errorf("got %x but expected %s", b, unidecode.ExecuteMessage))
-	}
-
-	execute, err := unidecode.DecodeExecute(b)
-	checkErr("", err)
-
+func printExecute(execute unidecode.Execute) {
 	fmt.Fprintf(os.Stdout, "EXECUTE:\n  Deadline: %s\n", execute.Deadline)
 	for _, cmd := range execute.Commands {
 		cmdType := cmd.Type()
@@ -397,6 +357,55 @@ func calldataCmd(args ...string) {
 //	}
 //}
 
+func process(isJSON, isJSONPretty bool, calldata []byte) {
+	t := unidecode.MessageType(calldata)
+	if t != unidecode.ExecuteMessage {
+		checkErr("currently only supports EXECUTE messages; %s", fmt.Errorf("got %x but expected %s", calldata, unidecode.ExecuteMessage))
+	}
+	execute, err := unidecode.DecodeExecute(calldata)
+	checkErr("", err)
+
+	if isJSON || isJSONPretty {
+		var b []byte
+		if isJSONPretty {
+			b, err = json.MarshalIndent(execute, "", "  ")
+		} else {
+			b, err = json.Marshal(execute)
+		}
+		checkErr("", err)
+
+		fmt.Fprintf(os.Stdout, "%s\n", b)
+	} else {
+		printExecute(execute)
+	}
+}
+
+func calldataCmd(isJSON, isPretty bool, args ...string) {
+	calldata := args[0]
+	if len(calldata) == 0 {
+		checkErr("", fmt.Errorf("empty/missing CALLDATA"))
+	}
+	if strings.HasPrefix(calldata, "0x") {
+		calldata = calldata[2:]
+	}
+
+	b, err := hex.DecodeString(calldata)
+	checkErr("", err)
+
+	process(isJSON, isPretty, b)
+}
+
+func transactionCmd(ctx context.Context, rpcURL string, isJSON, isPretty bool, args ...string) {
+	client, err := ethclient.DialContext(ctx, rpcURL)
+	checkErr("", err)
+
+	hash := common.HexToHash(args[0])
+	tx, _, err := client.TransactionByHash(ctx, hash)
+	checkErr("", err)
+
+	process(isJSON, isPretty, tx.Data())
+}
+
 var usageFmt = `Usage: %s [options...] command [args...]
 `
 
@@ -408,14 +417,20 @@ func usage() {
 var (
 	jsonFlag       bool
 	jsonPrettyFlag bool
+	rpcURL         string
 )
 
 func main() {
 	mainFlags := flag.NewFlagSet("main", flag.ExitOnError)
 	calldataFlags := flag.NewFlagSet("calldata", flag.ExitOnError)
+	txFlags := flag.NewFlagSet("tx", flag.ExitOnError)
 
 	calldataFlags.BoolVar(&jsonFlag, "json", false, "outputs results in JSON")
 	calldataFlags.BoolVar(&jsonPrettyFlag, "jsonpretty", false, "outputs results in pretty JSON")
+
+	txFlags.BoolVar(&jsonFlag, "json", false, "outputs results in JSON")
+	txFlags.BoolVar(&jsonPrettyFlag, "jsonpretty", false, "outputs results in pretty JSON")
+	txFlags.StringVar(&rpcURL, "rpc", "http://localhost:8545", "JSON RPC URL")
 
 	if len(os.Args) < 2 {
 		usage()
@@ -440,11 +455,19 @@ func main() {
 			os.Exit(1)
 		}
 
-		if !jsonFlag && !jsonPrettyFlag {
-			calldataCmd(args...)
-		} else {
-			calldataCmd_JSON(jsonPrettyFlag, args...)
+		calldataCmd(jsonFlag, jsonPrettyFlag, args...)
+	case "tx":
+		err := txFlags.Parse(args)
+		checkErr("", err)
+
+		args = txFlags.Args()
+		if len(args) != 1 {
+			usage()
+			os.Exit(1)
 		}
+
+		ctx := context.Background()
+		transactionCmd(ctx, rpcURL, jsonFlag, jsonPrettyFlag, args...)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", command)
 		usage()
