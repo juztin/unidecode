@@ -407,6 +407,38 @@ func transactionCmd(ctx context.Context, rpcURL string, isJSON, isPretty bool, a
 }
 
 var usageFmt = `Usage: %s [options...] command [args...]
+
+COMMANDS:
+
+  calldata [FLAGS] CALLDATA       decodes raw execute calldata
+  tx [FLAGS] HASH                 decodes an execute transactions calldata
+
+FLAGS
+
+  -json                           outputs compressed JSON
+  -jsonpretty                     outputs pretty JSON
+
+  tx
+    -rpc                          URL of an RPC API endpoint (DEFAULT: http://localhost:8545)
+
+EXAMPLES
+
+  unidecode calldata "3593564c000000000000000000000..."
+  unidecode calldata -json "3593564c000000000000000000000..."
+  unidecode calldata -jsonpretty "3593564c000000000000000000000..."
+
+  unidecode tx 0x061c3b1c472fb8727648e106e002b620b413e46d2b3e50d70dd7cefac4e110a3
+  unidecode tx -json 0x061c3b1c472fb8727648e106e002b620b413e46d2b3e50d70dd7cefac4e110a3
+  unidecode tx -jsonpretty 0x061c3b1c472fb8727648e106e002b620b413e46d2b3e50d70dd7cefac4e110a3
+
+  unidecode tx \
+    -rpc "https://mainnet.infura.io/v3/00000000000000000000000000000000" \
+    0x061c3b1c472fb8727648e106e002b620b413e46d2b3e50d70dd7cefac4e110a3
+
+  unidecode tx \
+    -jsonpretty \
+    -rpc "https://mainnet.infura.io/v3/00000000000000000000000000000000" \
+    0x061c3b1c472fb8727648e106e002b620b413e46d2b3e50d70dd7cefac4e110a3
 `
 
 func usage() {
