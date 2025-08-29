@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,9 +12,17 @@ import (
 )
 
 type Sweep struct {
-	Token     common.Address
-	Recipient common.Address
-	AmountMin *big.Int
+	Token     common.Address `json:"token"`
+	Recipient common.Address `json:"recipient"`
+	AmountMin *big.Int       `json:"amountMin"`
+}
+
+func (s Sweep) MarshalJSON() ([]byte, error) {
+	type Alias Sweep
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SWEEP.String()})
 }
 
 func (Sweep) Type() Type {

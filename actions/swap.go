@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -12,14 +13,22 @@ import (
 )
 
 type SwapExactOut struct {
-	CurrencyOut     common.Address
-	Path            []path.Key
-	AmountOut       *big.Int
-	AmountInMaximum *big.Int
+	CurrencyOut     common.Address `json:"currencyOut"`
+	Path            []path.Key     `json:"path"`
+	AmountOut       *big.Int       `json:"amountOut"`
+	AmountInMaximum *big.Int       `json:"amountInMaximum"`
 }
 
 func (SwapExactOut) Type() Type {
 	return SWAP_EXACT_OUT
+}
+
+func (s SwapExactOut) MarshalJSON() ([]byte, error) {
+	type Alias SwapExactOut
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SWAP_EXACT_OUT.String()})
 }
 
 func DecodeSwapExactOut(calldata []byte, offset int) (SwapExactOut, error) {
@@ -55,15 +64,23 @@ func DecodeSwapExactOut(calldata []byte, offset int) (SwapExactOut, error) {
 }
 
 type SwapExactOutSingle struct {
-	PoolKey         pool.Key
-	ZeroForOne      bool
-	AmountOut       *big.Int
-	AmountInMaximum *big.Int
-	HookData        []byte
+	PoolKey         pool.Key `json:"poolKey"`
+	ZeroForOne      bool     `json:"zeroForOne"`
+	AmountOut       *big.Int `json:"amountOut"`
+	AmountInMaximum *big.Int `json:"amountInMaximum"`
+	HookData        []byte   `json:"hookData"`
 }
 
 func (s SwapExactOutSingle) Type() Type {
 	return SWAP_EXACT_OUT_SINGLE
+}
+
+func (s SwapExactOutSingle) MarshalJSON() ([]byte, error) {
+	type Alias SwapExactOutSingle
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SWAP_EXACT_OUT_SINGLE.String()})
 }
 
 func DecodeSwapExactOutSingle(calldata []byte, offset int) (SwapExactOutSingle, error) {
@@ -102,14 +119,22 @@ func DecodeSwapExactOutSingle(calldata []byte, offset int) (SwapExactOutSingle, 
 }
 
 type SwapExactIn struct {
-	CurrencyIn       common.Address
-	Path             []path.Key
-	AmountIn         *big.Int
-	AmountOutMaximum *big.Int
+	CurrencyIn       common.Address `json:"currencyIn"`
+	Path             []path.Key     `json:"path"`
+	AmountIn         *big.Int       `json:"amountIn"`
+	AmountOutMaximum *big.Int       `json:"amountOutMaximum"`
 }
 
 func (SwapExactIn) Type() Type {
 	return SWAP_EXACT_IN
+}
+
+func (s SwapExactIn) MarshalJSON() ([]byte, error) {
+	type Alias SwapExactIn
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SWAP_EXACT_IN.String()})
 }
 
 func DecodeSwapExactIn(calldata []byte, offset int) (SwapExactIn, error) {
@@ -145,15 +170,23 @@ func DecodeSwapExactIn(calldata []byte, offset int) (SwapExactIn, error) {
 }
 
 type SwapExactInSingle struct {
-	PoolKey          pool.Key
-	ZeroForOne       bool
-	AmountIn         *big.Int
-	AmountOutMaximum *big.Int
-	HookData         []byte
+	PoolKey          pool.Key `json:"poolKey"`
+	ZeroForOne       bool     `json:"zeroForOne"`
+	AmountIn         *big.Int `json:"amountInt"`
+	AmountOutMaximum *big.Int `json:"amountOutMaximum"`
+	HookData         []byte   `json:"hookData"`
 }
 
 func (SwapExactInSingle) Type() Type {
 	return SWAP_EXACT_IN_SINGLE
+}
+
+func (s SwapExactInSingle) MarshalJSON() ([]byte, error) {
+	type Alias SwapExactInSingle
+	return json.Marshal(&struct {
+		Alias
+		HookData string `json:"hookData"`
+	}{(Alias)(s), fmt.Sprintf("0x%x", s.HookData)})
 }
 
 func DecodeSwapExactInSingle(calldata []byte, offset int) (SwapExactInSingle, error) {

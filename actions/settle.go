@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -10,13 +11,21 @@ import (
 )
 
 type Settle struct {
-	Currency    common.Address
-	Amount      *big.Int
-	PayerIsUser bool
+	Currency    common.Address `json:"currency"`
+	Amount      *big.Int       `json:"amount"`
+	PayerIsUser bool           `json:"payerIsUser"`
 }
 
 func (Settle) Type() Type {
 	return SETTLE
+}
+
+func (s Settle) MarshalJSON() ([]byte, error) {
+	type Alias Settle
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SETTLE.String()})
 }
 
 func DecodeSettle(calldata []byte, offset int) (Settle, error) {
@@ -42,12 +51,20 @@ func DecodeSettle(calldata []byte, offset int) (Settle, error) {
 }
 
 type SettleAll struct {
-	Currency  common.Address
-	MaxAmount *big.Int
+	Currency  common.Address `json:"currency"`
+	MaxAmount *big.Int       `json:"maxAmount"`
 }
 
 func (s SettleAll) Type() Type {
 	return SETTLE_ALL
+}
+
+func (s SettleAll) MarshalJSON() ([]byte, error) {
+	type Alias SettleAll
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SETTLE_ALL.String()})
 }
 
 func DecodeSettleAll(calldata []byte, offset int) (SettleAll, error) {

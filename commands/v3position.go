@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -16,18 +17,26 @@ import (
 var permitSig = []byte{0x7a, 0xc2, 0xff, 0x7b}
 
 type Sig struct {
-	V uint8
+	V uint8 `json:"v"`
 	//R []byte
 	//S []byte
-	R [32]byte
-	S [32]byte
+	R [32]byte `json:"r"`
+	S [32]byte `json:"s"`
 }
 
 type V3PositionManagerPermit struct {
-	Spender  common.Address
-	Amount   *big.Int
-	Deadline time.Time
-	Sig      Sig
+	Spender  common.Address `json:"spender"`
+	Amount   *big.Int       `json:"amount"`
+	Deadline time.Time      `json:"deadline"`
+	Sig      Sig            `json:"sig"`
+}
+
+func (p V3PositionManagerPermit) MarshalJSON() ([]byte, error) {
+	type Alias V3PositionManagerPermit
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), V3_POSITION_MANAGER_PERMIT.String()})
 }
 
 func (V3PositionManagerPermit) Type() Type {
@@ -83,7 +92,15 @@ func DecodeV3PositionManagerPermit(calldata []byte, offset int) (V3PositionManag
 // universal-router/contracts/base/Dispatcher.sol:254
 
 type V3PositionManagerCall struct {
-	Action actions.Action
+	Action actions.Action `json:"action"`
+}
+
+func (p V3PositionManagerCall) MarshalJSON() ([]byte, error) {
+	type Alias V3PositionManagerCall
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), V3_POSITION_MANAGER_CALL.String()})
 }
 
 func (V3PositionManagerCall) Type() Type {

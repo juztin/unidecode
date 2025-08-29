@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -12,17 +13,25 @@ import (
 )
 
 type PermitDetails struct {
-	Token      common.Address
-	Amount     *big.Int
-	Expiration time.Time
-	Nonce      uint64
+	Token      common.Address `json:"token"`
+	Amount     *big.Int       `json:"amount"`
+	Expiration time.Time      `json:"expiration"`
+	Nonce      uint64         `json:"nonce"`
 }
 
 type Permit2Permit struct {
-	Details     PermitDetails
-	Spender     common.Address
-	SigDeadline *big.Int
-	Sig         []byte
+	Details     PermitDetails  `json:"details"`
+	Spender     common.Address `json:"spender"`
+	SigDeadline *big.Int       `json:"sigDeadline"`
+	Sig         []byte         `json:"sig"`
+}
+
+func (p Permit2Permit) MarshalJSON() ([]byte, error) {
+	type Alias Permit2Permit
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), PERMIT2_PERMIT.String()})
 }
 
 func (Permit2Permit) Type() Type {
@@ -94,10 +103,18 @@ func DecodePermit2Permit(calldata []byte, offset int) (Permit2Permit, error) {
 }
 
 type Permit2PermitBatch struct {
-	Details     []PermitDetails
-	Spender     common.Address
-	SigDeadline *big.Int
-	Sig         []byte
+	Details     []PermitDetails `json:"details"`
+	Spender     common.Address  `json:"spender"`
+	SigDeadline *big.Int        `json:"sigDeadline"`
+	Sig         []byte          `json:"sig"`
+}
+
+func (p Permit2PermitBatch) MarshalJSON() ([]byte, error) {
+	type Alias Permit2PermitBatch
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), PERMIT2_PERMIT_BATCH.String()})
 }
 
 func (Permit2PermitBatch) Type() Type {
@@ -120,9 +137,17 @@ func DecodePermit2PermitBatch(calldata []byte, offset int) (Permit2PermitBatch, 
 }
 
 type Permit2TransferFrom struct {
-	Token     common.Address
-	Recipient common.Address
-	Amount    *big.Int
+	Token     common.Address `json:"token"`
+	Recipient common.Address `json:"recipient"`
+	Amount    *big.Int       `json:"amount"`
+}
+
+func (p Permit2TransferFrom) MarshalJSON() ([]byte, error) {
+	type Alias Permit2TransferFrom
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), PERMIT2_TRANSFER_FROM.String()})
 }
 
 func (Permit2TransferFrom) Type() Type {
@@ -141,7 +166,16 @@ func DecodePermit2TransferFrom(calldata []byte, offset int) (Permit2TransferFrom
 	}, nil
 }
 
+// TODO Implement
 type Permit2TransferFromBatch struct{}
+
+func (p Permit2TransferFromBatch) MarshalJSON() ([]byte, error) {
+	type Alias Permit2TransferFromBatch
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), PERMIT2_TRANSFER_FROM_BATCH.String()})
+}
 
 func (Permit2TransferFromBatch) Type() Type {
 	return PERMIT2_TRANSFER_FROM_BATCH

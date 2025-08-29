@@ -8,11 +8,11 @@ import (
 )
 
 type Key struct {
-	Currency0   common.Address
-	Currency1   common.Address
-	Fee         *big.Int
-	TickSpacing *big.Int
-	Hooks       common.Address
+	Currency0   common.Address `json:"currency0"`
+	Currency1   common.Address `json:"currency1"`
+	Fee         *big.Int       `json:"fee"`
+	TickSpacing *big.Int       `json:"tickSpacing"`
+	Hooks       common.Address `json:"hooks"`
 }
 
 func NewKey(currency0, currency1 common.Address, fee *big.Int, tickSpacing *big.Int, hooks common.Address) Key {

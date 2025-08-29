@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,9 +10,17 @@ import (
 )
 
 type BalanceCheckERC20 struct {
-	Owner      common.Address
-	Token      common.Address
-	MinBalance *big.Int
+	Owner      common.Address `json:"owner"`
+	Token      common.Address `json:"token"`
+	MinBalance *big.Int       `json:"minBalance"`
+}
+
+func (b BalanceCheckERC20) MarshalJSON() ([]byte, error) {
+	type Alias BalanceCheckERC20
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(b), BALANCE_CHECK_ERC20.String()})
 }
 
 func (BalanceCheckERC20) Type() Type {

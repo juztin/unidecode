@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -10,13 +11,21 @@ import (
 )
 
 type Take struct {
-	Currency  common.Address
-	Recipient common.Address
-	Amount    *big.Int
+	Currency  common.Address `json:"currency"`
+	Recipient common.Address `json:"recipient"`
+	Amount    *big.Int       `json:"amount"`
 }
 
 func (Take) Type() Type {
 	return TAKE
+}
+
+func (t Take) MarshalJSON() ([]byte, error) {
+	type Alias Take
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(t), TAKE.String()})
 }
 
 func DecodeTake(calldata []byte, offset int) (Take, error) {
@@ -37,12 +46,20 @@ func DecodeTake(calldata []byte, offset int) (Take, error) {
 }
 
 type TakeAll struct {
-	Currency  common.Address
-	MinAmount *big.Int
+	Currency  common.Address `json:"currency"`
+	MinAmount *big.Int       `json:"minAmount"`
 }
 
 func (t TakeAll) Type() Type {
 	return TAKE_ALL
+}
+
+func (t TakeAll) MarshalJSON() ([]byte, error) {
+	type Alias TakeAll
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(t), TAKE_ALL.String()})
 }
 
 func DecodeTakeAll(calldata []byte, offset int) (TakeAll, error) {
@@ -62,13 +79,21 @@ func DecodeTakeAll(calldata []byte, offset int) (TakeAll, error) {
 }
 
 type TakePortion struct {
-	Currency  common.Address
-	Recipient common.Address
-	BIPs      *big.Int
+	Currency  common.Address `json:"currency"`
+	Recipient common.Address `json:"recipient"`
+	BIPs      *big.Int       `json:"bips"`
 }
 
 func (t TakePortion) Type() Type {
 	return TAKE_PORTION
+}
+
+func (t TakePortion) MarshalJSON() ([]byte, error) {
+	type Alias TakePortion
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(t), TAKE_PORTION.String()})
 }
 
 func DecodeTakePortion(calldata []byte, offset int) (TakePortion, error) {

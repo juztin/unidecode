@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,9 +12,17 @@ import (
 )
 
 type Transfer struct {
-	Token     common.Address
-	Recipient common.Address
-	Value     *big.Int
+	Token     common.Address `json:"token"`
+	Recipient common.Address `json:"recipeient"`
+	Value     *big.Int       `json:"value"`
+}
+
+func (t Transfer) MarshalJSON() ([]byte, error) {
+	type Alias Transfer
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(t), TRANSFER.String()})
 }
 
 func (Transfer) Type() Type {

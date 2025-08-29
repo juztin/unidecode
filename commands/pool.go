@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,8 +11,16 @@ import (
 )
 
 type V4InitializePool struct {
-	Key       pool.Key
-	SqrtPrice *big.Int
+	Key       pool.Key `json:"key"`
+	SqrtPrice *big.Int `json:"sqrtPrice"`
+}
+
+func (p V4InitializePool) MarshalJSON() ([]byte, error) {
+	type Alias V4InitializePool
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), V4_INITIALIZE_POOL.String()})
 }
 
 func (V4InitializePool) Type() Type {

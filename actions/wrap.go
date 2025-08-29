@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -15,13 +16,21 @@ var (
 )
 
 type Wrap struct {
-	Amount   *big.Int
-	Currency common.Address
-	Wrapped  common.Address
+	Amount   *big.Int       `json:"wrap"`
+	Currency common.Address `json:"currency"`
+	Wrapped  common.Address `json:"wrapped"`
 }
 
 func (Wrap) Type() Type {
 	return WRAP
+}
+
+func (w Wrap) MarshalJSON() ([]byte, error) {
+	type Alias Wrap
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(w), WRAP.String()})
 }
 
 func DecodeWrap(calldata []byte, offset int) (Wrap, error) {
@@ -50,6 +59,14 @@ type Unwrap struct {
 
 func (Unwrap) Type() Type {
 	return UNWRAP
+}
+
+func (w Unwrap) MarshalJSON() ([]byte, error) {
+	type Alias Unwrap
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(w), UNWRAP.String()})
 }
 
 func DecodeUnwrap(calldata []byte, offset int) (Unwrap, error) {

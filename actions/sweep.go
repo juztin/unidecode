@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,12 +10,20 @@ import (
 )
 
 type Sweep struct {
-	Currency  common.Address
-	Recipient common.Address
+	Currency  common.Address `json:"currency"`
+	Recipient common.Address `json:"recipient"`
 }
 
 func (Sweep) Type() Type {
 	return SWEEP
+}
+
+func (s Sweep) MarshalJSON() ([]byte, error) {
+	type Alias Sweep
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), SWEEP.String()})
 }
 
 func DecodeSweep(calldata []byte, offset int) (Sweep, error) {

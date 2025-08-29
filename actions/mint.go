@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,18 +12,27 @@ import (
 )
 
 type MintPosition struct {
-	PoolKey    pool.Key
-	TickLower  int64
-	TickUpper  int64
-	Liquidity  *big.Int
-	Amount0Max *big.Int
-	Amount1Max *big.Int
-	Owner      common.Address
-	HookData   []byte
+	PoolKey    pool.Key       `json:"poolKey"`
+	TickLower  int64          `json:"tickLower"`
+	TickUpper  int64          `json:"tickUpper"`
+	Liquidity  *big.Int       `json:"liquidity"`
+	Amount0Max *big.Int       `json:"amount0max"`
+	Amount1Max *big.Int       `json:"amount1max"`
+	Owner      common.Address `json:"owner"`
+	HookData   []byte         `json:"hookData"`
 }
 
 func (MintPosition) Type() Type {
 	return MINT_POSITION
+}
+
+func (m MintPosition) MarshalJSON() ([]byte, error) {
+	type Alias MintPosition
+	return json.Marshal(&struct {
+		Alias
+		HookData string `json:"hookData"`
+		Type     string `json:"type"`
+	}{(Alias)(m), fmt.Sprintf("0x%x", m.HookData), MINT_POSITION.String()})
 }
 
 func DecodeMintPosition(calldata []byte, offset int) (MintPosition, error) {

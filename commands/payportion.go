@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,9 +12,17 @@ import (
 )
 
 type PayPortion struct {
-	Token     common.Address
-	Recipient common.Address
-	BIPs      *big.Int
+	Token     common.Address `json:"token"`
+	Recipient common.Address `json:"recipient"`
+	BIPs      *big.Int       `json:"bips"`
+}
+
+func (p PayPortion) MarshalJSON() ([]byte, error) {
+	type Alias PayPortion
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(p), PAY_PORTION.String()})
 }
 
 func (PayPortion) Type() Type {

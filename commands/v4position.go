@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,6 +20,14 @@ type V4PositionManagerCall struct {
 
 func (V4PositionManagerCall) Type() Type {
 	return V4_POSITION_MANAGER_CALL
+}
+
+func (s V4PositionManagerCall) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Type     string           `json:"type"`
+		Deadline time.Time        `json:"deadline"`
+		Actions  []actions.Action `json:"actions"`
+	}{V4_POSITION_MANAGER_CALL.String(), s.Deadline, s.actions})
 }
 
 func (p V4PositionManagerCall) Actions() []actions.Action {

@@ -41,9 +41,21 @@ func (t messageType) String() string {
 }
 
 type Execute struct {
-	Commands []commands.Command
-	Deadline *time.Time
+	Commands []commands.Command `json:"commands"`
+	Deadline *time.Time         `json:"deadline"`
 }
+
+//func (e Execute) MarshalJSON() ([]byte, error) {
+//	return json.Marshal(&struct {
+//		//Execute struct {
+//		Commands []commands.Command `json:"commands"`
+//		Deadline *time.Time         `json:"deadline"`
+//		//} `json:"execute"`
+//	}{
+//		Commands: e.Commands,
+//		Deadline: e.Deadline,
+//	})
+//}
 
 func (e Execute) Swap() *commands.V4Swap {
 	for i := range e.Commands {

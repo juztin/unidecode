@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,12 +12,20 @@ import (
 )
 
 type WrapWETH struct {
-	Recipient common.Address
-	AmountMin *big.Int
+	Recipient common.Address `json:"recipient"`
+	AmountMin *big.Int       `json:"amountMin"`
 }
 
 func (WrapWETH) Type() Type {
 	return WRAP_ETH
+}
+
+func (w WrapWETH) MarshalJSON() ([]byte, error) {
+	type Alias WrapWETH
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(w), V4_POSITION_MANAGER_CALL.String()})
 }
 
 func (WrapWETH) Actions() []actions.Action {
@@ -41,12 +50,20 @@ func DecodeWrapWETH(calldata []byte, offset int) (WrapWETH, error) {
 }
 
 type UnwrapWETH struct {
-	Recipient common.Address
-	AmountMin *big.Int
+	Recipient common.Address `json"recipient"`
+	AmountMin *big.Int       `json:"amountMin"`
 }
 
 func (UnwrapWETH) Type() Type {
 	return UNWRAP_WETH
+}
+
+func (w UnwrapWETH) MarshalJSON() ([]byte, error) {
+	type Alias UnwrapWETH
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(w), UNWRAP_WETH.String()})
 }
 
 func (UnwrapWETH) Actions() []actions.Action {

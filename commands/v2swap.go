@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,13 +15,20 @@ type V2SwapExactIn struct {
 	//       1: msg.sender
 	//       2: this
 	//   other: value
-	Recipient    common.Address
-	AmountIn     *big.Int
-	AmountOutMin *big.Int
-	// payer = PayerIsUser ? msg.sender : this
-	PayerIsUser bool
+	Recipient    common.Address `json:"recipient"`
+	AmountIn     *big.Int       `json:"amountIn"`
+	AmountOutMin *big.Int       `json:"amountOutMin"`
+	PayerIsUser  bool           `json:"payerIsUser"` // payer = PayerIsUser ? msg.sender : this
 	// TODO Implement v2 path decoding
 	// Path ...
+}
+
+func (s V2SwapExactIn) MarshalJSON() ([]byte, error) {
+	type Alias V2SwapExactIn
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), V2_SWAP_EXACT_IN.String()})
 }
 
 func (V2SwapExactIn) Type() Type {
@@ -54,13 +62,20 @@ type V2SwapExactOut struct {
 	//       1: msg.sender
 	//       2: this
 	//   other: value
-	Recipient   common.Address
-	AmountOut   *big.Int
-	AmountInMin *big.Int
-	// payer = PayerIsUser ? msg.sender : this
-	PayerIsUser bool
+	Recipient   common.Address `json:"recipient"`
+	AmountOut   *big.Int       `json:"amountOut"`
+	AmountInMin *big.Int       `json:"amountInMin"`
+	PayerIsUser bool           `json:"payerIsUser"` // payer = PayerIsUser ? msg.sender : this
 	// TODO Implement v2 path decoding
 	// Path ...
+}
+
+func (s V2SwapExactOut) MarshalJSON() ([]byte, error) {
+	type Alias V2SwapExactOut
+	return json.Marshal(&struct {
+		Alias
+		Type string `json:"type"`
+	}{(Alias)(s), V2_SWAP_EXACT_OUT.String()})
 }
 
 func (V2SwapExactOut) Type() Type {

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/juztin/unidecode/actions"
@@ -13,6 +14,15 @@ type V4Swap struct {
 
 func (V4Swap) Type() Type {
 	return V4_SWAP
+}
+
+func (s V4Swap) MarshalJSON() ([]byte, error) {
+	type Alias V4Swap
+	return json.Marshal(&struct {
+		Alias
+		Type    string           `json:"type"`
+		Actions []actions.Action `json:"actions"`
+	}{(Alias)(s), V4_SWAP.String(), s.actions})
 }
 
 func (s V4Swap) Actions() []actions.Action {

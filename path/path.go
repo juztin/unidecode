@@ -1,6 +1,7 @@
 package path
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -11,11 +12,19 @@ import (
 )
 
 type Key struct {
-	IntermediateCurrency common.Address
-	Fee                  *big.Int
-	TickSpacing          *big.Int
-	Hooks                common.Address
-	HookData             []byte
+	IntermediateCurrency common.Address `json:"intermediateCurrency"`
+	Fee                  *big.Int       `json:"fee"`
+	TickSpacing          *big.Int       `json:"tickSpacing"`
+	Hooks                common.Address `json:"hooks"`
+	HookData             []byte         `json:"hookData"`
+}
+
+func (k Key) MarshalJSON() ([]byte, error) {
+	type Alias Key
+	return json.Marshal(&struct {
+		Alias
+		HookData string `json:"hookData"`
+	}{(Alias)(k), fmt.Sprintf("0x%x", k.HookData)})
 }
 
 func PoolAndSwapDirection(k Key, currencyIn common.Address) (pool.Key, bool) {
