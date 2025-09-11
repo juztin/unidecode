@@ -12,6 +12,9 @@ import (
 	"github.com/juztin/unidecode/pool"
 )
 
+// SwapExactOut Solidity representation
+//
+// see: v4-periphery/src/interfaces/IV4Router.sol:44
 type SwapExactOut struct {
 	CurrencyOut     common.Address `json:"currencyOut"`
 	Path            []path.Key     `json:"path"`
@@ -63,6 +66,9 @@ func DecodeSwapExactOut(calldata []byte, offset int) (SwapExactOut, error) {
 	return s, nil
 }
 
+// SwapExactOutSingle Solidity representation
+//
+// v4-periphery/src/interfaces/IV4Router.sol:35
 type SwapExactOutSingle struct {
 	PoolKey         pool.Key `json:"poolKey"`
 	ZeroForOne      bool     `json:"zeroForOne"`
@@ -118,11 +124,14 @@ func DecodeSwapExactOutSingle(calldata []byte, offset int) (SwapExactOutSingle, 
 	return s, nil
 }
 
+// SwapExactIn Solidity representation
+//
+// v4-periphery/src/interfaces/IV4Router.sol:27
 type SwapExactIn struct {
 	CurrencyIn       common.Address `json:"currencyIn"`
 	Path             []path.Key     `json:"path"`
 	AmountIn         *big.Int       `json:"amountIn"`
-	AmountOutMaximum *big.Int       `json:"amountOutMaximum"`
+	AmountOutMinimum *big.Int       `json:"amountOutMinimum"`
 }
 
 func (SwapExactIn) Type() Type {
@@ -155,7 +164,7 @@ func DecodeSwapExactIn(calldata []byte, offset int) (SwapExactIn, error) {
 	s = SwapExactIn{}
 	s.CurrencyIn = common.BytesToAddress(calldata[offset : offset+0x20])
 	s.AmountIn = new(big.Int).SetBytes(calldata[offset+0x40 : offset+0x60])
-	s.AmountOutMaximum = new(big.Int).SetBytes(calldata[offset+0x60 : offset+0x80])
+	s.AmountOutMinimum = new(big.Int).SetBytes(calldata[offset+0x60 : offset+0x80])
 
 	pathsStart, err := hex.Int(calldata[offset+0x20 : offset+0x40])
 	if err != nil {
@@ -169,6 +178,9 @@ func DecodeSwapExactIn(calldata []byte, offset int) (SwapExactIn, error) {
 	return s, nil
 }
 
+// SwapExactInSingle Solidity representation
+//
+// v4-periphery/src/interfaces/IV4Router.sol:18
 type SwapExactInSingle struct {
 	PoolKey          pool.Key `json:"poolKey"`
 	ZeroForOne       bool     `json:"zeroForOne"`

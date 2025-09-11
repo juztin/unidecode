@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +19,7 @@ import (
 	"github.com/juztin/unidecode/commands"
 )
 
-var (
+const (
 	actionArgFmt       = "%9s %s: %s\n"
 	actionArgSubFmt    = "%11s %s: %s\n"
 	actionArgSubIdxFmt = "%11s [%d] %s\n"
@@ -82,7 +84,7 @@ func printActions(cmd commands.Command) {
 				fmt.Fprintf(os.Stdout, actionArgSubSubFmt, "", "HookData", fmt.Sprintf("%x", p.HookData))
 			}
 			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountIn", a.AmountIn)
-			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountOutMaximum", a.AmountOutMaximum)
+			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountOutMinimum", a.AmountOutMinimum)
 		case actions.SWAP_EXACT_OUT_SINGLE:
 			a := action.(actions.SwapExactOutSingle)
 			fmt.Fprintf(os.Stdout, actionArgFmt, "", "PoolKey", a.PoolKey.ID())
@@ -326,37 +328,6 @@ func printExecute(execute unidecode.Execute) {
 	}
 }
 
-//func calldata_raw() {
-//	if cmd.Actions() != nil {
-//		fmt.Printf("\t[%s] actions: %d\n\t\t%+v\n", cmd.Type(), len(cmd.Actions()), cmd)
-//	} else {
-//		fmt.Printf("\t[%s] \n\t\t%+v\n", cmd.Type(), cmd)
-//	}
-//	//switch cmd.Type() {
-//	//case commands.V4_SWAP:
-//	//	swap := cmd.(commands.V4Swap)
-//	//	for _, action := range swap.Actions {
-//	//		//fmt.Printf("\t[%T] %+v\n", action, action)
-//	//		fmt.Printf("\t\t[%s] %+v\n", action.Type(), action)
-//	//	}
-//	//case commands.V4_POSITION_MANAGER_CALL:
-//	//	swap := cmd.(commands.V4PositionManagerCall)
-//	//	for _, action := range swap.Actions {
-//	//		//fmt.Printf("\t[%T] %+v\n", action, action)
-//	//		fmt.Printf("\t\t[%s] %+v\n", action.Type(), action)
-//	//	}
-//	//}
-//	switch cmd.Type() {
-//	case commands.V3_POSITION_MANAGER_CALL:
-//		call := cmd.(commands.V3PositionManagerCall)
-//		fmt.Printf("\t\t[%s] %+v\n", call.Action.Type(), call.Action)
-//	default:
-//		for _, action := range cmd.Actions() {
-//			fmt.Printf("\t\t[%s] %+v\n", action.Type(), action)
-//		}
-//	}
-//}
-
 func process(isJSON, isJSONPretty bool, calldata []byte) {
 	t := unidecode.MessageType(calldata)
 	if t != unidecode.ExecuteMessage {
@@ -380,30 +351,58 @@ func process(isJSON, isJSONPretty bool, calldata []byte) {
 	}
 }
 
-func calldataCmd(isJSON, isPretty bool, args ...string) {
-	calldata := args[0]
+func calldataCmd(isJSON, isPretty bool, calldata []byte) {
 	if len(calldata) == 0 {
 		checkErr("", fmt.Errorf("empty/missing CALLDATA"))
 	}
-	if strings.HasPrefix(calldata, "0x") {
+	if bytes.HasPrefix(calldata, []byte("0x")) {
 		calldata = calldata[2:]
 	}
 
-	b, err := hex.DecodeString(calldata)
+	b := make([]byte, len(calldata))
+	_, err := hex.Decode(b, calldata)
 	checkErr("", err)
 
 	process(isJSON, isPretty, b)
 }
 
-func transactionCmd(ctx context.Context, rpcURL string, isJSON, isPretty bool, args ...string) {
+func transactionCmd(ctx context.Context, rpcURL string, isJSON, isPretty bool, hash common.Hash) {
 	client, err := ethclient.DialContext(ctx, rpcURL)
 	checkErr("", err)
 
-	hash := common.HexToHash(args[0])
 	tx, _, err := client.TransactionByHash(ctx, hash)
 	checkErr("", err)
 
 	process(isJSON, isPretty, tx.Data())
+}
+
+func pipedOrArg(args []string) ([]byte, error) {
+	info, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	hasPipedData := (info.Mode() & os.ModeCharDevice) == 0
+	if len(args) > 0 && hasPipedData {
+		return nil, fmt.Errorf("can't accept both piped data and argument")
+	} else if len(args) == 0 && !hasPipedData {
+		return nil, fmt.Errorf("missing stdin and argument")
+	}
+
+	var b []byte
+	if len(args) > 0 {
+		b = []byte(args[0])
+	} else {
+		in, err := io.ReadAll(os.Stdin)
+		checkErr("", err)
+
+		s := string(in)
+		s = strings.TrimSpace(s)
+		s = strings.Trim(s, "\"")
+		s = strings.TrimPrefix(s, "0x")
+		b = []byte(s)
+	}
+	return b, err
 }
 
 var usageFmt = `Usage: %s [options...] command [args...]
@@ -482,24 +481,28 @@ func main() {
 		checkErr("", err)
 
 		args = calldataFlags.Args()
-		if len(args) != 1 {
+
+		b, err := pipedOrArg(args)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 			usage()
 			os.Exit(1)
 		}
-
-		calldataCmd(jsonFlag, jsonPrettyFlag, args...)
+		calldataCmd(jsonFlag, jsonPrettyFlag, b)
 	case "tx":
 		err := txFlags.Parse(args)
 		checkErr("", err)
 
 		args = txFlags.Args()
-		if len(args) != 1 {
+		b, err := pipedOrArg(args)
+		if err != nil {
+			fmt.Fprint(os.Stderr, "%s\n", err)
 			usage()
 			os.Exit(1)
 		}
-
+		hash := common.BytesToHash(b)
 		ctx := context.Background()
-		transactionCmd(ctx, rpcURL, jsonFlag, jsonPrettyFlag, args...)
+		transactionCmd(ctx, rpcURL, jsonFlag, jsonPrettyFlag, hash)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", command)
 		usage()
