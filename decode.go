@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/juztin/unidecode/actions"
 	"github.com/juztin/unidecode/commands"
 	"github.com/juztin/unidecode/hex"
 )
@@ -63,6 +66,36 @@ func (e Execute) Swap() *commands.V4Swap {
 			cmd := e.Commands[i]
 			swap := cmd.(commands.V4Swap)
 			return &swap
+		}
+	}
+	return nil
+}
+
+func (e Execute) EthIn() *big.Int {
+	var zeroAddress = common.Address{}
+
+	for i := range e.Commands {
+		cmd := e.Commands[i]
+		switch cmd.Type() {
+		case commands.V2_SWAP_EXACT_IN,
+			commands.V3_SWAP_EXACT_IN,
+			commands.V4_SWAP:
+			for _, action := range cmd.Actions() {
+				switch action.Type() {
+				case actions.SWAP_EXACT_IN:
+					a := action.(actions.SwapExactIn)
+					if a.CurrencyIn == zeroAddress {
+						return a.AmountIn
+					}
+					return nil
+				case actions.SWAP_EXACT_IN_SINGLE:
+					a := action.(actions.SwapExactIn)
+					if a.CurrencyIn == zeroAddress {
+						return a.AmountIn
+					}
+					return nil
+				}
+			}
 		}
 	}
 	return nil
