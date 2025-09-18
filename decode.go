@@ -90,7 +90,7 @@ func (e Execute) EthIn() *big.Int {
 					return nil
 				case actions.SWAP_EXACT_IN_SINGLE:
 					a := action.(actions.SwapExactInSingle)
-					if a.CurrencyIn == zeroAddress {
+					if a.PoolKey.Currency0 == zeroAddress {
 						return a.AmountIn
 					}
 					return nil
