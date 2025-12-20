@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -114,6 +115,8 @@ func MessageType(calldata []byte) messageType {
 	return UnknownMessage
 }
 
+var maxDeadline = big.NewInt(math.MaxInt64)
+
 func DecodeExecute(calldata []byte) (Execute, error) {
 	var e Execute
 	if bytes.HasPrefix(calldata, hexPrefix) {
@@ -144,11 +147,13 @@ func DecodeExecute(calldata []byte) (Execute, error) {
 
 	e = Execute{}
 	if commandStart == 0x60 {
-		epoch, err := hex.Int64(calldata[0x40:0x60])
-		if err != nil {
-			return e, fmt.Errorf("invalid deadline value; %w", err)
+		epoch := new(big.Int).SetBytes(calldata[0x40:0x60])
+		var deadline time.Time
+		if epoch.Cmp(maxDeadline) > 0 {
+			deadline = time.Unix(maxDeadline.Int64(), 0)
+		} else {
+			deadline = time.Unix(epoch.Int64(), 0)
 		}
-		deadline := time.Unix(epoch, 0)
 		e.Deadline = &deadline
 	}
 

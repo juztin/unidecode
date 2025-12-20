@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -204,7 +205,11 @@ func printActions(cmd commands.Command) {
 }
 
 func printExecute(execute unidecode.Execute) {
-	fmt.Fprintf(os.Stdout, "EXECUTE:\n  Deadline: %s\n", execute.Deadline)
+	if execute.Deadline.Unix() == math.MaxInt64 {
+		fmt.Fprintf(os.Stdout, "EXECUTE:\n  Deadline: none\n")
+	} else {
+		fmt.Fprintf(os.Stdout, "EXECUTE:\n  Deadline: %s\n", execute.Deadline)
+	}
 	for _, cmd := range execute.Commands {
 		cmdType := cmd.Type()
 		fmt.Fprintf(os.Stdout, "    - %s:\n", strings.ToUpper(cmdType.String()))
