@@ -70,7 +70,7 @@ func printActions(cmd commands.Command) {
 			fmt.Fprintf(os.Stdout, actionArgSubFmt, "", "Hooks", a.PoolKey.Hooks)
 			fmt.Fprintf(os.Stdout, actionArgFmt, "", "ZeroForOne", strconv.FormatBool(a.ZeroForOne))
 			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountIn", a.AmountIn)
-			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountOutMaximum", a.AmountOutMaximum)
+			fmt.Fprintf(os.Stdout, actionArgFmt, "", "AmountOutMinimum", a.AmountOutMinimum)
 			fmt.Fprintf(os.Stdout, actionArgFmt, "", "HookData", fmt.Sprintf("%x", a.HookData))
 		case actions.SWAP_EXACT_IN:
 			a := action.(actions.SwapExactIn)
