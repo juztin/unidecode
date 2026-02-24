@@ -100,7 +100,7 @@ func DecodeSwapExactOutSingle(calldata []byte, offset int) (SwapExactOutSingle, 
 	offset += 0x20
 	start, err := hex.Int(calldata[offset : offset+0x20])
 	if err != nil {
-		return s, fmt.Errorf("invalid start value; %w", calldata[offset:offset+0x20], err)
+		return s, fmt.Errorf("invalid start value: 0x%x; %w", calldata[offset:offset+0x20], err)
 	}
 	offset += start
 
@@ -119,9 +119,8 @@ func DecodeSwapExactOutSingle(calldata []byte, offset int) (SwapExactOutSingle, 
 
 	s.AmountOut = new(big.Int).SetBytes(calldata[offset+0xc0 : offset+0xe0])
 	s.AmountInMaximum = new(big.Int).SetBytes(calldata[offset+0xe0 : offset+0x100])
-	// TODO check hookData loc
-	s.HookData = calldata[offset+0x100 : offset+0x120]
-	return s, nil
+	s.HookData, err = hookDataFrom(calldata, offset)
+	return s, err
 }
 
 // SwapExactIn Solidity representation
@@ -157,7 +156,7 @@ func DecodeSwapExactIn(calldata []byte, offset int) (SwapExactIn, error) {
 	offset += 0x20
 	start, err := hex.Int(calldata[offset : offset+0x20])
 	if err != nil {
-		return s, fmt.Errorf("invalid start value; %w", calldata[offset:offset+0x20], err)
+		return s, fmt.Errorf("invalid start value: 0x%x; %w", calldata[offset:offset+0x20], err)
 	}
 	offset += start
 
@@ -185,7 +184,7 @@ type SwapExactInSingle struct {
 	PoolKey          pool.Key `json:"poolKey"`
 	ZeroForOne       bool     `json:"zeroForOne"`
 	AmountIn         *big.Int `json:"amountInt"`
-	AmountOutMaximum *big.Int `json:"amountOutMaximum"`
+	AmountOutMinimum *big.Int `json:"amountOutMinimum"`
 	HookData         []byte   `json:"hookData"`
 }
 
@@ -212,7 +211,7 @@ func DecodeSwapExactInSingle(calldata []byte, offset int) (SwapExactInSingle, er
 	offset += 0x20
 	start, err := hex.Int(calldata[offset : offset+0x20])
 	if err != nil {
-		return s, fmt.Errorf("invalid start value; %w", calldata[offset:offset+0x20], err)
+		return s, fmt.Errorf("invalid start value: 0x%x; %w", calldata[offset:offset+0x20], err)
 	}
 	offset += start
 
@@ -230,8 +229,24 @@ func DecodeSwapExactInSingle(calldata []byte, offset int) (SwapExactInSingle, er
 	}
 
 	s.AmountIn = new(big.Int).SetBytes(calldata[offset+0xc0 : offset+0xe0])
-	s.AmountOutMaximum = new(big.Int).SetBytes(calldata[offset+0xe0 : offset+0x100])
-	// TODO check hookData loc
-	s.HookData = calldata[offset+0x100 : offset+0x120]
-	return s, nil
+	s.AmountOutMinimum = new(big.Int).SetBytes(calldata[offset+0xe0 : offset+0x100])
+	s.HookData, err = hookDataFrom(calldata, offset)
+	return s, err
+}
+
+func hookDataFrom(calldata []byte, offset int) ([]byte, error) {
+	hookDataOffset, err := hex.Int(calldata[offset+0x100 : offset+0x120])
+	if err != nil {
+		return nil, fmt.Errorf("invalid hook-data start value: 0x%x", calldata[offset+0x100:offset+0x120])
+	}
+	hookDataLen, err := hex.Int(calldata[offset+hookDataOffset : offset+hookDataOffset+0x20])
+	var hookData []byte
+	if err != nil {
+		err = fmt.Errorf("invalid hook-data length: 0x%x; %w", calldata[offset+hookDataOffset:offset+hookDataOffset+0x20], err)
+	} else if hookDataLen == 0 {
+		hookData = []byte{0x0}
+	} else {
+		hookData = calldata[offset+hookDataOffset : offset+hookDataOffset+hookDataLen]
+	}
+	return hookData, nil
 }
