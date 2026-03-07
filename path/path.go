@@ -49,7 +49,17 @@ func Decode(calldata []byte, offset int) (Key, error) {
 	if err != nil {
 		return k, fmt.Errorf("invalid hookData start value; %w", err)
 	}
-	k.HookData = calldata[offset+hookDataStart : offset+hookDataStart+0x20]
+
+	offset = offset + hookDataStart
+	hookDataLen, err := hex.Int(calldata[offset : offset+0x20])
+	if err != nil {
+		err = fmt.Errorf("invalid hook-data length: 0x%x; %w", calldata[offset:offset+0x20], err)
+	} else if hookDataLen == 0 {
+		fmt.Println("ZERO")
+		k.HookData = []byte{0x0}
+	} else {
+		k.HookData = calldata[offset+0x20 : offset+0x20+hookDataLen]
+	}
 	return k, nil
 }
 
@@ -73,4 +83,21 @@ func DecodeMany(calldata []byte, offset int) ([]Key, error) {
 		keys = append(keys, key)
 	}
 	return keys, nil
+}
+
+func hookDataFrom(calldata []byte, offset int) ([]byte, error) {
+	hookDataOffset, err := hex.Int(calldata[offset+0x100 : offset+0x120])
+	if err != nil {
+		return nil, fmt.Errorf("invalid hook-data start value: 0x%x", calldata[offset+0x100:offset+0x120])
+	}
+	hookDataLen, err := hex.Int(calldata[offset+hookDataOffset : offset+hookDataOffset+0x20])
+	var hookData []byte
+	if err != nil {
+		err = fmt.Errorf("invalid hook-data length: 0x%x; %w", calldata[offset+hookDataOffset:offset+hookDataOffset+0x20], err)
+	} else if hookDataLen == 0 {
+		hookData = []byte{0x0}
+	} else {
+		hookData = calldata[offset+hookDataOffset : offset+hookDataOffset+hookDataLen]
+	}
+	return hookData, nil
 }
