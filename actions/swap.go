@@ -246,7 +246,7 @@ func hookDataFrom(calldata []byte, offset int) ([]byte, error) {
 	} else if hookDataLen == 0 {
 		hookData = []byte{0x0}
 	} else {
-		hookData = calldata[offset+hookDataOffset : offset+hookDataOffset+hookDataLen]
+		hookData = calldata[offset+hookDataOffset+0x20 : offset+hookDataOffset+0x20+hookDataLen]
 	}
 	return hookData, nil
 }
